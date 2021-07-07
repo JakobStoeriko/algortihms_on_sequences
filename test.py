@@ -38,9 +38,6 @@ def generate_output(treelist,filename,dest_path,print_div_word):
 				
 				###calculate upper right triangle of distance matrix
 				t_dm[i][i+j+1] = simk
-				if simk==None:
-					print(entry_w,W.w)
-					print(entry_v,V.w)
 				maximum = max(simk,maximum)
 				
 				###direct compare
