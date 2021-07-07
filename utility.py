@@ -1,5 +1,3 @@
-from Simon_tree import SimonTree
-from s_connection import SConnection
 from collections import deque
 from tqdm import tqdm
 import os

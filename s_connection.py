@@ -31,23 +31,27 @@ class SConnection:
 			(t_node,s_node,k) = queue.popleft()
 			if len(self.T.w[t_node.end:])<k or len(self.S.w[s_node.end:])<k:
 				continue
-			for t in set(self.T.w[t_node.end-1:]).union(set(self.S.w[s_node.end-1:])):
+			unionset = set(self.T.w[t_node.end-1:]).union(set(self.S.w[s_node.end-1:]))
+			for t in unionset:
 				i = self.T.w[t_node.end-1:].find(t)+t_node.end+1
 				j = self.S.w[s_node.end-1:].find(t)+s_node.end+1
 				if i>len(self.T.w) or j>len(self.S.w):
-					continue
+					flag = False
+					break
 				for l in range(len(t_nodelist[k])-1,-1,-1):
 					x = t_nodelist[k][l]
 					if i >= x.start:
 						break
 				if x.end < i:
-					continue
+					flag = False
+					break
 				for l in range(len(s_nodelist[k])-1,-1,-1):
 					y = s_nodelist[k][l]
 					if j >= y.start:
 						break
 				if y.end < j:
-					continue
+					flag = False
+					break
 				if x.connect != y or y.connect != x:
 					flag = False
 					break

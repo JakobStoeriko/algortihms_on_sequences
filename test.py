@@ -129,11 +129,11 @@ def generate_treelist_from_fasta(input_path, dest_path):
 					continue
 				elif line[0] == '>':
 					if name != '' and v != '':
-						treelist.append((name,SimonTree(transform_input(v)).extend()))
+						treelist.append((name,SimonTree(v).extend()))
 						v = ''
 					name = line[1:-1]
 				else:
 					v += line.rstrip('\n')
-			treelist.append((name,SimonTree(transform_input(v)).extend()))
+			treelist.append((name,SimonTree(v).extend()))
 	os.chdir(old_cwd)
 	return treelist

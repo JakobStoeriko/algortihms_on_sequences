@@ -1,7 +1,9 @@
 from collections import deque
 import numpy as np
+from utility import transform_input
 
 def next(w):
+	w = transform_input(w)
 	k = len(set(w))
 	next = np.zeros(len(w))
 	temp = np.ones(k)*(len(w)+1)
@@ -26,7 +28,7 @@ class SimonTree:
 	def __init__(self,w):
 		self.w = w
 		n = len(w)
-		w = w + str(len(set(w))+1)
+		w += '$'
 		self.X = next(w)
 		self.root = SimonNode(n+1,n+1,self,True)
 		p = self.root
@@ -49,6 +51,7 @@ class SimonTree:
 			else:
 				break
 		self.nodelist = self.build_nodelist()
+		w = w[:-1]
 		
 	def findNode(self,i,p):
 		while p != self.root:
