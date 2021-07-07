@@ -70,5 +70,6 @@ class SConnection:
 		for i,j in zip(range(len(self.T.nodelist)),range(len(self.S.nodelist))):
 			if len(self.S_Con) <= i or len(self.S_Con) <= j:
 				return i-1
-			if (self.T.nodelist[i][0],self.S.nodelist[j][0]) != self.S_Con[i][-1]:
+			if not self.S_Con[i] or (self.T.nodelist[i][0],self.S.nodelist[j][0]) != self.S_Con[i][-1]:
 				return i-1
+		return i

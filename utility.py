@@ -17,6 +17,8 @@ def input_regex(path):
 			for line in fasta:
 				if line[0] != '>':
 					line = re.findall(r'[ACGT]', line)
+					if not line:
+						line.append('>')
 					line.append("\n")
 				data = "".join(str(x) for x in line)
 				temp_file.write(data)

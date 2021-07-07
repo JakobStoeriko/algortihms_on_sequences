@@ -38,6 +38,9 @@ def generate_output(treelist,filename,dest_path,print_div_word):
 				
 				###calculate upper right triangle of distance matrix
 				t_dm[i][i+j+1] = simk
+				if simk==None:
+					print(entry_w,W.w)
+					print(entry_v,V.w)
 				maximum = max(simk,maximum)
 				
 				###direct compare
@@ -125,13 +128,15 @@ def generate_treelist_from_fasta(input_path, dest_path):
 			name = ''
 			v = ''
 			for line in fasta:
-				if line[0] == '>':
-					if name != '':
-						treelist.append((name,SimonTree(transform_input(v))))
+				if line[0] == '>' and len(line) == 1:
+					continue
+				elif line[0] == '>':
+					if name != '' and v != '':
+						treelist.append((name,SimonTree(transform_input(v)).extend()))
 						v = ''
 					name = line[1:-1]
 				else:
-					v += line
+					v += line.rstrip('\n')
 			treelist.append((name,SimonTree(transform_input(v)).extend()))
 	os.chdir(old_cwd)
 	return treelist

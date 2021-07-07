@@ -70,6 +70,7 @@ def main():
 		if args.subcommand_c == 'a':
 			entries = os.listdir('preprocessed_data')
 			for entry in entries:
+				print(entry)
 				create_output(args.path,entry,args.div_word,args.trim)
 			
 		elif args.subcommand_c == 's':	
