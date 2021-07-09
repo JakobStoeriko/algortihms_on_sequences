@@ -21,7 +21,8 @@ def generate_output(treelist,filename,dest_path,print_div_word):
 	os.chdir(dest_path)
 	
 	n = len(treelist)
-	t_dm = np.zeros((n,n))
+	t_dm = np.full([n,n],np.nan)
+	#old_dm = np.zeros((n,n))
 	namelist = []
 	i = 0
 	maximum = 0
@@ -31,13 +32,16 @@ def generate_output(treelist,filename,dest_path,print_div_word):
 	with open("{a}.txt".format(a=filename), 'w') as output:
 		while treelist:
 			entry_w,W = treelist.pop()
-			for j in range(len(treelist)):
-				entry_v,V = treelist[j]
+			n = len(treelist)
+			for j in range(n):
+				entry_v,V = treelist[n-j-1]
 				SC = SConnection(W,V)
 				simk = SC.max_simk()
 				
 				###calculate upper right triangle of distance matrix
 				t_dm[i][i+j+1] = simk
+				t_dm[i+j+1][i] = simk
+				#old_dm[i][i+j+1] =simk
 				maximum = max(simk,maximum)
 				
 				###direct compare
@@ -54,11 +58,14 @@ def generate_output(treelist,filename,dest_path,print_div_word):
 		average /=m
 		output.write("average: " + str(average))
 		
-	###normalise and expand distance matrix	
-	for i in range(n):
-		for j in range(i+1,n):
-			t_dm[i][j] = 1-(t_dm[i][j]/maximum)
-			t_dm[j][i] = t_dm[i][j]
+	###normalise and expand distance matrix
+	t_dm = np.nan_to_num(t_dm,nan=maximum)
+	t_dm = 1 - t_dm/maximum
+	#for i in range(n):
+	#	for j in range(i+1,n):
+	#		old_dm[i][j] = 1-(old_dm[i][j]/maximum)
+	#		old_dm[j][i] = old_dm[i][j]
+	#print(old_dm)
 			
 	###print distance matrix:
 	np.savetxt('distance_matrix.txt',t_dm,delimiter=',')
@@ -66,6 +73,7 @@ def generate_output(treelist,filename,dest_path,print_div_word):
 	
 	###build newick tree		
 	dm = DistanceMatrix(t_dm,namelist)
+	#print(dm)
 	tree = nj(dm)
 	with open("{a}.tree".format(a=filename), 'w') as dest_file:
 		dest_file.write(tree.ascii_art())
