@@ -46,6 +46,7 @@ def main():
 	
 	parser_single = subparsers_create.add_parser('s',help='Process a single fasta file')
 	parser_single.add_argument('name',help='name of fasta file to be read, without extension')
+	parser_single.add_argument('-com_nt', action='store_true', default=False, help='If this option is set, the computed newick tree will be compared to the correct phylogenetical tree, which must be stored in the same folder as the input data')
 	
 	parser_all = subparsers_create.add_parser('a',help='Process all files in preprocessed_data directory')
 	
@@ -62,7 +63,7 @@ def main():
 		if not os.path.exists(input_path):
 			os.mkdir(input_path)
 		test.generate_random_fasta(args.letters,args.n,args.m,input_path)
-		print('to use this data use the following format: name = r,c={a},l={b}'.format(a=args.n,b=args.m))
+		print('to use this data use the following format: name = r,s={d},c={a},l={b}'.format(a=args.n,b=args.m,d=len(args.letters)))
 		
 	if args.subcommand =='c':
 		if not os.path.exists('results'):

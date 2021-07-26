@@ -47,7 +47,7 @@ def transform_input(w):
 	indexlist = [i for i in range(1,len(set(w))+1)]
 
 	w_dict = {letter:rank for (letter,rank) in zip(alphlist,indexlist)}
-	for c in set(w):
-		w = w.replace(c,str(w_dict[c]))
+	#for c in set(w):
+	#	w = w.replace(c,str(w_dict[c]))
 		
-	return w
+	return w_dict

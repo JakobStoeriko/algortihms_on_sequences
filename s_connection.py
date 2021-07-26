@@ -67,12 +67,54 @@ class SConnection:
 					
 		return S_Con
 	
-	def build_div_word():
-		pass
+	def build_div_word(self):
+		w=''
+		k=0
+		while len(self.S_Con) > k and self.S_Con[k] and (self.T.nodelist[k][0],self.S.nodelist[k][0]) == self.S_Con[k][-1]:
+			k+=1
+		t_nodelist = self.T.nodelist
+		s_nodelist = self.S.nodelist
+		t_node = t_nodelist[k][0]
+		s_node = s_nodelist[k][0]
+		while k>0:
+			unionset =  sorted(set(self.T.w[t_node.end-1:]).union(self.S.w[s_node.end-1:]))
+			found = False
+			for t in unionset:
+				i = self.T.w[t_node.end-1:].find(t)+t_node.end+1
+				j = self.S.w[s_node.end-1:].find(t)+s_node.end+1
+				if i>len(self.T.w) or j>len(self.S.w):
+					w += t
+					return w
+				for l in range(len(t_nodelist[k-1])-1,-1,-1):
+					x = t_nodelist[k-1][l]
+					if i >= x.start:
+						break
+				if x.end < i:
+					w += t
+					return w
+				for l in range(len(s_nodelist[k-1])-1,-1,-1):
+					y = s_nodelist[k-1][l]
+					if j >= y.start:
+						break
+				if y.end < j:
+					w += t
+					return w
+				if x.connect != y or y.connect != x:
+					w += t
+					t_node = x
+					s_node = y
+					k -= 1
+					found=True
+					break
+			if not found:
+				return w
+		return w
+			
 		
 	def max_simk(self):
 		for i,j in zip(range(len(self.T.nodelist)),range(len(self.S.nodelist))):
 			if len(self.S_Con) <= i or len(self.S_Con) <= j:
+				
 				return i-1
 			if not self.S_Con[i] or (self.T.nodelist[i][0],self.S.nodelist[j][0]) != self.S_Con[i][-1]:
 				return i-1

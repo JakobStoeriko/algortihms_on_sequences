@@ -1,5 +1,3 @@
-#from Simon_tree import SimonTree
-#from s_connection import SConnection
 from Simon_tree import SimonTree
 from s_connection import SConnection
 import string
@@ -13,7 +11,21 @@ from scipy.spatial.distance import squareform
 from skbio import DistanceMatrix
 import numpy as np
 from skbio.tree import nj
+from skbio import TreeNode
 from textwrap import fill
+from shortlex_normal_linear import max_sim_k_binary_search
+
+def compare_newick_trees(path1,path2):
+	old_cwd = os.getcwd()
+	os.chdir(path1)
+	with open('{a}.newick'.format(a=path1+os.path.basename(path1))) as nt1:
+		tree1 = TreeNode.read(nt1.readlines())
+	os.chdir(path2)
+	with open('{a}.newick'.format(a=path2+os.path.basename(path2))) as nt2:
+		tree2 = TreeNode.read(nt2.readlines())
+	os.chdir(old_cwd)
+	return tree1.compare_rfd(tree2)
+	
 
 def generate_output(treelist,filename,dest_path,print_div_word):
 	sys.setrecursionlimit(100000)
@@ -29,7 +41,7 @@ def generate_output(treelist,filename,dest_path,print_div_word):
 	
 	average = 0
 	m = (len(treelist)-1)*len(treelist)/2
-	with open("{a}.txt".format(a=filename), 'w') as output:
+	with open("{a}.txt".format(a=filename), 'w') as output, open("correct.txt",'w') as correct:
 		while treelist:
 			entry_w,W = treelist.pop()
 			n = len(treelist)
@@ -46,6 +58,7 @@ def generate_output(treelist,filename,dest_path,print_div_word):
 				
 				###direct compare
 				average += simk
+				#correct.write(str(simk) + ',' + str(max_sim_k_binary_search(W.w,V.w))+'\n')
 				output.write(entry_w+','+entry_v+','+str(simk) + (', div_word: '+ SC.build_div_word() if print_div_word else '') + '\n')
 				del SC,V
 			del W
@@ -80,6 +93,7 @@ def generate_output(treelist,filename,dest_path,print_div_word):
 	tree = nj(dm, result_constructor=str)
 	with open("{a}.newick".format(a=filename),'w') as newick_file:
 		newick_file.write(tree)
+	#print('Robinson-Foulds-Distance:{a}'.format(a=compare_newick_trees(dest_path,'/preprocessed_data/{a}'.format(a=filename))))
 	os.chdir(old_cwd)
 	print('finished')
 	
@@ -107,7 +121,7 @@ def generate_average(dest_path,treelist,filename,print_div_word):
 	
 def generate_random_fasta(letters,n,m,dest_path):
 	sys.setrecursionlimit(100000)
-	formatstring = 'r,c={a},l={b}'.format(a=n,b=m)
+	formatstring = 'r,s={d},c={a},l={b}'.format(a=n,b=m,d=len(letters))
 	dest_path += '/'+formatstring
 	if not os.path.exists(dest_path):
 		os.mkdir(dest_path)
