@@ -14,34 +14,44 @@ from skbio.tree import nj
 from skbio import TreeNode
 from textwrap import fill
 from shortlex_normal_linear import max_sim_k_binary_search
+from nltk.metrics.distance import edit_distance
+from LCS import LCS
+recursionlimit = 10000
 
 def compare_newick_trees(path1,path2):
 	old_cwd = os.getcwd()
 	os.chdir(path1)
-	with open('{a}.newick'.format(a=path1+os.path.basename(path1))) as nt1:
+	with open('{a}.newick'.format(a=path1+'/'+os.path.basename(path1))) as nt1:
 		tree1 = TreeNode.read(nt1.readlines())
 	os.chdir(path2)
-	with open('{a}.newick'.format(a=path2+os.path.basename(path2))) as nt2:
+	with open('{a}.newick'.format(a=path2+'/'+os.path.basename(path2))) as nt2:
 		tree2 = TreeNode.read(nt2.readlines())
 	os.chdir(old_cwd)
 	return tree1.compare_rfd(tree2)
 	
 
-def generate_output(treelist,filename,dest_path,print_div_word):
-	sys.setrecursionlimit(100000)
+def generate_output(treelist,filename,dest_path,print_div_word,lev,correct_check,lcs):
+	sys.setrecursionlimit(recursionlimit)
 	old_cwd = os.getcwd()
 	os.chdir(dest_path)
 	
 	n = len(treelist)
 	t_dm = np.full([n,n],np.nan)
-	#old_dm = np.zeros((n,n))
+	if lev:
+		levenshtein_dm = np.full([n,n],np.nan)
+		lev_max = 0
+		lev_min = np.nan
+	if lcs:
+		lcs_dm = np.full([n,n],np.nan)
+		lcs_max = 0
+		lcs_min = np.nan
 	namelist = []
 	i = 0
 	maximum = 0
-	
+	minimum = np.nan
 	average = 0
 	m = (len(treelist)-1)*len(treelist)/2
-	with open("{a}.txt".format(a=filename), 'w') as output, open("correct.txt",'w') as correct:
+	with open("{a}.txt".format(a=filename), 'w') as output:
 		while treelist:
 			entry_w,W = treelist.pop()
 			n = len(treelist)
@@ -53,12 +63,25 @@ def generate_output(treelist,filename,dest_path,print_div_word):
 				###calculate upper right triangle of distance matrix
 				t_dm[i][i+j+1] = simk
 				t_dm[i+j+1][i] = simk
-				#old_dm[i][i+j+1] =simk
+				if lev:
+					ld = edit_distance(W.w,V.w)
+					levenshtein_dm[i][i+j+1] = ld
+					levenshtein_dm[i+j+1][i] = ld
+					lev_max = max(ld,lev_max)
+					lev_min = min(ld,lev_min)
+				if lcs:
+					lcs = LCS(W.w,V.w)
+					lcs_dm[i][i+j+1] = lcs
+					lcs_dm[i+j+1][i] = lcs
+					lcs_max = max(lcs,lcs_max)
+					lcs_min = min(lcs,lcs_min)
+					
 				maximum = max(simk,maximum)
-				
+				minimum = min(simk, minimum)
 				###direct compare
 				average += simk
-				#correct.write(str(simk) + ',' + str(max_sim_k_binary_search(W.w,V.w))+'\n')
+				if correct_check and max_sim_k_binary_search(W.w,V.w) != simk:
+					sys.exit('Implementation falsch')
 				output.write(entry_w+','+entry_v+','+str(simk) + (', div_word: '+ SC.build_div_word() if print_div_word else '') + '\n')
 				del SC,V
 			del W
@@ -73,12 +96,18 @@ def generate_output(treelist,filename,dest_path,print_div_word):
 		
 	###normalise and expand distance matrix
 	t_dm = np.nan_to_num(t_dm,nan=maximum)
-	t_dm = 1 - t_dm/maximum
-	#for i in range(n):
-	#	for j in range(i+1,n):
-	#		old_dm[i][j] = 1-(old_dm[i][j]/maximum)
-	#		old_dm[j][i] = old_dm[i][j]
-	#print(old_dm)
+	t_dm = 1 - (t_dm-minimum)/(maximum-minimum)
+	if lev:
+		levenshtein_dm = np.nan_to_num(levenshtein_dm,nan=lev_max)
+		levenshtein_dm = 1 - (levenshtein_dm-lev_min)/(lev_max-lev_min)
+		with open('distance_compare_lev.txt','w') as distance_compare:
+			for i in range(1,len(t_dm)):
+				distance_compare.write(namelist[i]+','+str(t_dm[0][i])+','+str(levenshtein_dm[0][i])+'\n')
+	if lcs:
+		lcs_dm = 1 - (np.nan_to_num(lcs_dm,nan=lcs_max)-lcs_min)/(lcs_max-lcs_min)
+		with open('distance_compare_lcs.txt','w') as distance_compare:
+			for i in range(1,len(t_dm)):
+				distance_compare.write(namelist[i]+','+str(t_dm[0][i])+','+str(lcs_dm[0][i])+'\n')
 			
 	###print distance matrix:
 	np.savetxt('distance_matrix.txt',t_dm,delimiter=',')
@@ -93,13 +122,12 @@ def generate_output(treelist,filename,dest_path,print_div_word):
 	tree = nj(dm, result_constructor=str)
 	with open("{a}.newick".format(a=filename),'w') as newick_file:
 		newick_file.write(tree)
-	#print('Robinson-Foulds-Distance:{a}'.format(a=compare_newick_trees(dest_path,'/preprocessed_data/{a}'.format(a=filename))))
 	os.chdir(old_cwd)
 	print('finished')
 	
 	
 def generate_average(dest_path,treelist,filename,print_div_word):
-	sys.setrecursionlimit(100000)
+	sys.setrecursionlimit(recursionlimit)
 	old_cwd = os.getcwd()
 	os.chdir(dest_path)
 	average = 0
@@ -120,7 +148,7 @@ def generate_average(dest_path,treelist,filename,print_div_word):
 	
 	
 def generate_random_fasta(letters,n,m,dest_path):
-	sys.setrecursionlimit(100000)
+	sys.setrecursionlimit(recursionlimit)
 	formatstring = 'r,s={d},c={a},l={b}'.format(a=n,b=m,d=len(letters))
 	dest_path += '/'+formatstring
 	if not os.path.exists(dest_path):
@@ -137,7 +165,7 @@ def generate_random_fasta(letters,n,m,dest_path):
 
 	
 def generate_treelist_from_fasta(input_path, dest_path):
-	sys.setrecursionlimit(100000)
+	sys.setrecursionlimit(recursionlimit)
 	treelist = []
 	old_cwd = os.getcwd()
 	os.chdir(input_path)
@@ -156,6 +184,8 @@ def generate_treelist_from_fasta(input_path, dest_path):
 					name = line[1:-1]
 				else:
 					v += line.rstrip('\n')
-			treelist.append((name,SimonTree(v).extend()))
+			if name != '' and v != '':
+				treelist.append((name,SimonTree(v).extend()))
 	os.chdir(old_cwd)
 	return treelist
+	

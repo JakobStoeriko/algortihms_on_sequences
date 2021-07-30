@@ -21,7 +21,6 @@ def next(w):
 	"""
 	w_dic = transform_input(w)
 	k = len(set(w))
-	#output array
 	next = np.zeros(len(w))
 	#help array to store for each character on which position it occured last
 	temp = np.ones(k)*(len(w)+1)
@@ -30,8 +29,6 @@ def next(w):
 	for i in range(len(w),0,-1):
 		next[i-1] = temp[w_dic[w[i-1]]-1]
 		temp[w_dic[w[i-1]]-1] = i
-		#next[i-1] = temp[int(w[i-1])-1]
-		#temp[int(w[i-1])-1] = i
 	return next
 	
 class SimonNode:

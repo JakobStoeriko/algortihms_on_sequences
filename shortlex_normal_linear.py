@@ -5,21 +5,23 @@ from utility import transform_input
 from operator import itemgetter
 
 def last(w):
+	w_dic = transform_input(w)
 	k = len(set(w))
 	last = np.zeros(len(w))
 	temp = np.zeros(k)
 	for i in range(len(w)):
-		last[i] = temp[int(w[i])-1]
-		temp[int(w[i])-1] = i+1
+		last[i] = temp[w_dic[w[i]]-1]
+		temp[w_dic[w[i]]-1] = i+1
 	return last
 	
 def next(w):
+	w_dic = transform_input(w)
 	k = len(set(w))
 	next = np.zeros(len(w))
 	temp = np.ones(k)*(len(w)+1)
 	for i in range(len(w),0,-1):
-		next[i-1] = temp[int(w[i-1])-1]
-		temp[int(w[i-1])-1] = i
+		next[i-1] = temp[w_dic[w[i-1]]-1]
+		temp[w_dic[w[i-1]]-1] = i
 	return next
 
 def calc_xcoordinates(w):
@@ -164,8 +166,6 @@ def max_sim_k_binary_search(u,w):
 	low = 0
 	high = min(len(u),len(w))-1
 	mid = 0
-	u = transform_input(u)
-	w = transform_input(w)
 	while low <= high:
 		mid = int((high+low)/2)
 		s_u = shortlex_normalform(u,mid)
