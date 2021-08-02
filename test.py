@@ -16,17 +16,26 @@ from textwrap import fill
 from shortlex_normal_linear import max_sim_k_binary_search
 from nltk.metrics.distance import edit_distance
 from LCS import LCS
+from ete3 import Tree
+
+
 recursionlimit = 10000
 
 def compare_newick_trees(path1,path2):
 	old_cwd = os.getcwd()
 	os.chdir(path1)
-	with open('{a}.newick'.format(a=path1+'/'+os.path.basename(path1))) as nt1:
+	path1 = path1+'/'+os.path.basename(path1)+'.newick'
+	Tree1=Tree(path1)
+	with open(path1) as nt1:
 		tree1 = TreeNode.read(nt1.readlines())
 	os.chdir(path2)
-	with open('{a}.newick'.format(a=path2+'/'+os.path.basename(path2))) as nt2:
+	path2 = path2+'/'+os.path.basename(path2)+'.newick'
+	Tree2=Tree(path2)
+	with open(path2) as nt2:
 		tree2 = TreeNode.read(nt2.readlines())
-	os.chdir(old_cwd)
+	os.chdir(old_cwd+'/compare')
+	Tree1.render(os.path.basename(path1)+'.png')
+	Tree2.render(os.path.basename(path2)+'_correct.png')	
 	return tree1.compare_rfd(tree2)
 	
 
@@ -96,10 +105,11 @@ def generate_output(treelist,filename,dest_path,print_div_word,lev,correct_check
 		
 	###normalise and expand distance matrix
 	t_dm = np.nan_to_num(t_dm,nan=maximum)
-	t_dm = 1 - (t_dm-minimum)/(maximum-minimum)
+	#t_dm = 1 - (t_dm-minimum)/(maximum-minimum)
+	t_dm = 1-t_dm/maximum
 	if lev:
 		levenshtein_dm = np.nan_to_num(levenshtein_dm,nan=lev_max)
-		levenshtein_dm = 1 - (levenshtein_dm-lev_min)/(lev_max-lev_min)
+		levenshtein_dm = (levenshtein_dm-lev_min)/(lev_max-lev_min)
 		with open('distance_compare_lev.txt','w') as distance_compare:
 			for i in range(1,len(t_dm)):
 				distance_compare.write(namelist[i]+','+str(t_dm[0][i])+','+str(levenshtein_dm[0][i])+'\n')
