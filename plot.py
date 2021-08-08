@@ -6,6 +6,8 @@ fstring = 'Reds'
 cmap = plt.cm.get_cmap(fstring).copy()
 cmap.set_bad(color='blue')
 
+if not os.path.exists('../compare'):
+		os.mkdir('../compare')
 os.chdir('../compare')
 ### plot wordlength
 x,y = np.loadtxt('word_length.txt',delimiter=';',unpack=True)
