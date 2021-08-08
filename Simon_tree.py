@@ -1,35 +1,7 @@
 from collections import deque
 import numpy as np
 from utility import transform_input
-
-
-def next(w):
-	"""Calculates an array in that for each position of the input word, the 
-	next position where the same character occurs is stored.
-	
-	Parameters
-	----------
-	w : str
-		The input word
-		
-	Returns
-	-------
-	next : np.ndarray
-		Array in which for every position the next position where that 
-		same character occurs is stored. If the character doesn't occur 
-		anymore inside w, 0 is stored.
-	"""
-	w_dic = transform_input(w)
-	k = len(set(w))
-	next = np.zeros(len(w))
-	#help array to store for each character on which position it occured last
-	temp = np.ones(k)*(len(w)+1)
-	#Run backwards through the word. Update the output array using the help array, then
-	#update the help array to store the new last occurence of that character
-	for i in range(len(w),0,-1):
-		next[i-1] = temp[w_dic[w[i-1]]-1]
-		temp[w_dic[w[i-1]]-1] = i
-	return next
+from utility import next
 	
 class SimonNode:
 	"""
@@ -55,7 +27,7 @@ class SimonNode:
 		Specifies if this node should be displayed when the tree is 
 		visualized. The default value is True.	
 	"""
-	def __init__(self,start,end, parent,visibile=True):
+	def __init__(self,start,end, parent,visible=True):
 		"""
 		Parameters
 		----------
@@ -74,9 +46,14 @@ class SimonNode:
 		self.parent = parent
 		self.children = deque()
 		self.connect = None
-		self.visibile = visibile
+		self.visible = visible
 		
 	def __str__(self):
+		"""
+		Returns
+		-------
+		s - string representation of this SimonNode
+		"""
 		return str(self.start) + "-" + str(self.end) 
 
 class SimonTree:
@@ -153,13 +130,13 @@ class SimonTree:
  		Parameters
 		----------
 		i : int
-			index which shall be inserted into the tree
+			index to insert into the tree
 		p : SimonNode
 			Pointer to the last inserted node
 		
 		Returns
 		-------
-		p - parent node of new node associated to position i.
+		p : parent node of new node associated to position i.
 		"""
 		while p != self.root:
 			r = p.end
@@ -179,9 +156,17 @@ class SimonTree:
 		
 		Parameters
 		----------
+		i : int
+			index to insert into the tree
+		a : SimonNode
+			node as whose children the new node is inserted
 		
+		Returns
+		-------
+		p : the leftmost newly inserted node
 		"""
 		r = a
+		#check if a is leftmost leaf of the tree
 		while r != self.root:
 			if r != r.parent.children[-1]:
 				break
@@ -193,9 +178,19 @@ class SimonTree:
 			a.children.append(SimonNode(0,i,a))
 		else:
 			a.children.append(SimonNode(0,i,a))
-		return a.children[-1]
+		p = a.children[-1]
+		return p
 		
 	def extend(self):
+		"""
+		Extends the SimonTree by adding another child-node to each leaf.
+		This is needed for computing the s-connection between two 
+		SimonTrees.
+		
+		Returns
+		-------
+		self : the extended SimonTree
+		"""
 		t = self.nodelist
 		for i in range(len(t)):
 			for j in range(len(t[i])):
@@ -206,6 +201,15 @@ class SimonTree:
 	
 	
 	def build_nodelist(self):
+		"""
+		Builds a list of lists to access nodes based on their level.
+		List of position i contains all nodes on level i from left to 
+		right.
+		
+		Returns
+		-------
+		T : a list of lists containing all nodes ordered by level
+		"""
 		T = [[]]
 		dq = deque()
 		dq.append((self.root,0))
@@ -218,11 +222,19 @@ class SimonTree:
 				dq.append((node.children[i],k+1))
 		return T
 		
-	def visualize(self):
+	def __str__(self):
+		"""
+		Returns
+		-------
+		s : a string representation of this SimonTree. The string 
+		    contains every node level by level. 
+		"""
 		T = self.nodelist
+		s = ''
 		for i in range(len(T)):
 			for j in range(len(T[i])):
 				if T[i][j].visible:
-					print(i,T[i][j], sep = ";", end = '		')
-			print("\n")
+					s += str(i) + ':' + str(T[i][j]) + ';		'
+			s += '\n'
+		return s
 

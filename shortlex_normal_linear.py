@@ -3,28 +3,25 @@ import math
 from sorting_techniques import pysort
 from utility import transform_input
 from operator import itemgetter
-
-def last(w):
-	w_dic = transform_input(w)
-	k = len(set(w))
-	last = np.zeros(len(w))
-	temp = np.zeros(k)
-	for i in range(len(w)):
-		last[i] = temp[w_dic[w[i]]-1]
-		temp[w_dic[w[i]]-1] = i+1
-	return last
-	
-def next(w):
-	w_dic = transform_input(w)
-	k = len(set(w))
-	next = np.zeros(len(w))
-	temp = np.ones(k)*(len(w)+1)
-	for i in range(len(w),0,-1):
-		next[i-1] = temp[w_dic[w[i-1]]-1]
-		temp[w_dic[w[i-1]]-1] = i
-	return next
+from utility import next
+from utility import last
 
 def calc_xcoordinates(w):
+	"""
+	Calculates the x-coordinates of the input word. The x-coordinate of a 
+	position is the length of the shortest X-Ranker that can reach said 
+	position
+	
+	Parameters
+	----------
+	w : str
+		the input word
+		
+	Returns
+	-------
+	x : ndarray
+		array storing for each position the corresponding x-coordinate
+	"""
 	l = last(w)
 	L = [0]
 	x = np.zeros(len(w))
@@ -44,6 +41,29 @@ def calc_xcoordinates(w):
 	return x
 
 def calc_ycoordinates(w,k,x):
+	"""
+	Calculates the y-coordinates of the input word. The y-coordinate of a 
+	position is the length of the shortest Y-Ranker that can reach said 
+	position. If for a position i and a position j which is the greatest 
+	position left of i which can be reached by a ranker of minimal length
+	x_i + y_j > k+1, y_i is set to infinity and thereby marked for 
+	deletion
+ 
+	Parameters
+	----------
+	w : str
+		the input word
+	k : int
+		k for which sim-k-equivalence is to be tested
+	x : []
+		x-coordinates of w
+		
+	Returns
+	-------
+	x : ndarray
+		array storing for each position the corresponding y-coordinate
+		or infinity if the position is marked for deletion
+	"""
 	n = next(w)
 	L = [len(w)+1]
 	y = np.zeros(len(w))
@@ -70,7 +90,65 @@ def calc_ycoordinates(w,k,x):
 				i_j = j
 	return y
 	
+def prune_w(w,x,y):
+	"""
+	Deletes all positions i from w where y_i is infinity
+	
+	Parameters
+	----------
+	w : str
+		the input word
+	x : []
+		x-coordinates of w
+	y : []
+		y-coordinates of w
+		
+	Returns
+	-------
+	res : str
+		the pruned word
+	x_new : []
+		pruned x-coordinates
+	y_new : []
+		pruned y-coordinates
+	"""
+	x_new = []
+	y_new = []
+	res= ""
+	for i in range(len(y)):
+		if not math.isinf(y[i]):
+			x_new.append(int(x[i]))
+			y_new.append(int(y[i]))
+			res += w[i]
+	return res,x_new,y_new
+	
 def build_blocks(w,x,y,k):
+	"""
+	Builds blocks to partition the input word. Blocks with an odd index
+	contain positions which can be resorted without changing the sim-k-class
+	Blocks with an even index contain positions which cannot be swapped.
+	Blocks can be empty.
+	
+	Parameters
+	----------
+	w : str 
+		the input word
+	x : []
+		x-coordinates of w
+	y : []
+		y-coordinates of w
+	k : int
+		k for which sim-k-equivalence is to be tested
+	
+	Returns
+	-------
+	L : [[]]
+		list of blocks. Blocks with even index contain positions which 
+		must remain in order, blocks with odd index contain positions
+		which can be resorted without changing sim-k-class
+	i : int
+		number of blocks which can be reordered
+	"""
 	L = []
 	L.append([])
 	i = 1
@@ -101,30 +179,86 @@ def build_blocks(w,x,y,k):
 	
 	
 def build_U(L,w,t):
+	"""
+	Builds a list of triples. For each block with odd index in L all 
+	positions of this block is considered. The triples contain the 
+	block-index, the letter in w corresponding to the position and the
+	position itself. This list is then sorted via radix-sort.
+	This sorting retains the order of the blocks and inside the blocks, 
+	sorts all positions lexicographically while preserving the order of 
+	positions where the same letter occurs.
+	
+	Parameters
+	----------
+	L : []
+		list of blocks containing all positions of w. Positions which
+		can be reordered must be in blocks with odd index, those who
+		musn't be reordered in blocks with even index. The method 
+		build_blocks() produces such a list
+	w : str
+		the input word
+	t : int
+		number of blocks which can be reordered
+	
+	Returns
+	-------
+	U : []
+		radix-sorted list containing triples of block-index, letter and 
+		position
+	"""
 	U = []
 	for i in range(1,t+1):
 		for j in L[2*i-1]:
 			U.append((i,w[j],j))
+	U.sort(key=itemgetter(0,1,2))		
 	return U
 	
 def build_Ut(U,t):
+	"""
+	Builds a list of lists where each list corresponds to one of the odd 
+	index blocks.
+	
+	Parameters
+	----------
+	U : []
+		list containing triples as produced by build_U()
+	t : int
+		number of odd index blocks
+		
+	Returns
+	-------
+	Ut : []
+		list of lists, each containing the letters of the triple of 
+		corresponding blocks
+	"""
 	Ut = []
 	for i in range(1,t+1):
-		Ut.append([k for k in U if k[0] == i])
+		Ut.append([k[1] for k in U if k[0] == i])
 	return Ut
 
-def prune_w(w,x,y):
-	x_new = []
-	y_new = []
-	res= ""
-	for i in range(len(y)):
-		if not math.isinf(y[i]):
-			x_new.append(int(x[i]))
-			y_new.append(int(y[i]))
-			res += w[i]
-	return res,x_new,y_new
 
 def build_shortlex(L,Ut,w):
+	"""
+	Builds the shortlex-normalform of w from L and Ut. For even block 
+	indices the original order as stored in L is used, for odd block 
+	indices the newly sorted order as stored in Ut is used.
+	
+	Parameters
+	----------
+	L : [[]]
+		list of lists containing blocks of w. Even index blocks contain 
+		positions which must remain in order. Odd index blocks contain
+		positions which must be reordered
+	Ut : [[]]
+		list of lists containing sorted odd index blocks of w.
+	w : str
+		the input word
+		
+	Returns
+	-------
+	shortlex : str
+		the shortlex normalform of w
+	"""
 	shortlex = ""
 	for t in range(len(L)):
 		if t%2 == 0:
@@ -132,37 +266,52 @@ def build_shortlex(L,Ut,w):
 				shortlex += w[l]
 		else:
 			for u in Ut[int((t-1)/2)]:
-				shortlex += u[1]
+				shortlex += u
 	return shortlex
-
-def sort_U(U):
-	Un = []
-	dic = {}
-	for u in U:
-		s = int(str(u[0])+u[1]+str(u[2]))
-		Un.append(s)
-	sortObj = pysort.Sorting()
-	sortObj.radixSort(Un)
-	U = []
-	for u in Un:
-		s = str(u)
-		U.append((int(s[0]),s[1],int(s[2])))		
-	return U
 	
 	
 def shortlex_normalform(w,k):
+	"""
+	Builds the shortlex-normalform of w for sim-k index k.
+	
+	Parameters
+	----------
+	w : str
+		the input word
+	k : int
+		sim-k index
+	
+	Returns
+	-------
+	shortlex : str
+		the shortlex-normalform of w for k
+	"""
 	x = calc_xcoordinates(w)
 	y = calc_ycoordinates(w,k,x)
 	w,x,y = prune_w(w,x,y)
 	L,t = build_blocks(w,x,y,k)
 	U = build_U(L,w,t)
-	U.sort(key=itemgetter(0,1,2))
-	#if(t!=0):
-	#	U = sort_U(U)
 	Ut = build_Ut(U,t)
-	return build_shortlex(L,Ut,w)
+	shortlex = build_shortlex(L,Ut,w)
+	return shortlex
 	
 def max_sim_k_binary_search(u,w):
+	"""
+	Computes the result of MAXSIMK for u and w via binary searching for k.
+	k is computed via construction of shortlex-normalforms and checking for
+	equality
+	
+	Parameters
+	----------
+	u : str
+		first input word
+	w : str
+		second input word
+		
+	Returns
+	-------
+	high : MAXSIMK(u,w)
+	"""
 	low = 0
 	high = min(len(u),len(w))-1
 	mid = 0
